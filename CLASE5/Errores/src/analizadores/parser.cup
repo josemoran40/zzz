@@ -1,0 +1,61 @@
+package analizadores;
+import java_cup.runtime.*;
+import java.util.ArrayList;
+import Error.*;
+import Instruction.*;
+
+parser code
+{:
+	public void syntax_error(Symbol s){
+		Instruction.list.add(new Error_("Se obtuvo: "+s.right, "SINTACTICO"));
+	}
+
+	public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{
+		Instruction.list.add(new Error_("Se obtuvo: "+s.right, "SINTACTICO"));
+	}
+:}
+
+terminal String PARLEFT, PARRIGHT;
+terminal String ADD, MINUS, TIMES, DIV;
+terminal String NUMBER;
+terminal String DECIMAL;
+terminal String UMINUS;
+terminal String PUNTOYCOMA;
+
+non terminal ini;
+non terminal instruction;
+non terminal Double expression;
+non terminal ArrayList<String> instructions;
+
+precedence left ADD, MINUS;
+precedence left TIMES, DIV;
+precedence right UMINUS;
+
+
+start with ini;
+
+ini ::= instructions:a {:
+	a.forEach((t)->{
+		System.out.println(t);
+	});
+:}
+;
+
+instructions ::=  instructions:list instruction:a {: RESULT=list; RESULT.add(new String(a.toString())); :}
+	| instruction:a {: RESULT= new ArrayList<String>(); RESULT.add(new String(a.toString())); :}
+;
+
+instruction ::= expression:exp PUNTOYCOMA {: RESULT=exp;:}
+	| error PUNTOYCOMA
+;
+
+expression ::=
+	UMINUS expression:left {: RESULT=0-left;:}
+	|expression:left ADD expression:right {: RESULT=left+right; :}
+	|expression:left MINUS expression:right {: RESULT=left-right; :}
+	|expression:left TIMES expression:right {: RESULT=left*right; :}
+	|expression:left DIV expression:right {: RESULT=left/right; :}
+	|PARLEFT expression:exp PARRIGHT {: RESULT=exp; :}
+	|NUMBER:num {:RESULT = new Double(num);:}
+	|DECIMAL:num {:RESULT = new Double(num);:}
+;
