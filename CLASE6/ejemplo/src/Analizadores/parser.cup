@@ -1,0 +1,63 @@
+package Analizadores;
+import java_cup.runtime.*;
+import java.util.ArrayList;
+import Expression.*;
+
+
+parser code 
+{:
+	/*Method that is called when parser can be recovered*/
+	public void syntax_error(Symbol s){ 
+        System.out.println("Unexpected token: " +s.value); 
+		//Instruction.lista.add(new Error_("Error Sintactico: "+s.value,"Sintactico"));
+    }
+
+	/*Method that is called when parser can't be recovered*/
+	public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{ 
+        System.out.println("Fatal error, unexcepted token: "+s.value); 
+		//Instruction.lista.add(new Error_("Error Sintactico: "+s.value,"Sintactico"));
+    } 
+:}
+
+
+terminal String ADD,MINUS,TIMES,DIV;
+terminal String NUMBER;
+terminal String DECIMAL;
+terminal String PUNTOYCOMA;
+
+non terminal ini;
+non terminal instruction;
+non terminal Expression expression;
+non terminal ArrayList<Expression> instructions;
+
+
+precedence left ADD,MINUS;
+precedence left TIMES,DIV;
+
+start with ini; 
+
+ini ::= instructions:a {:
+	a.forEach((t)->{
+		t.execute();
+		System.out.println(t.getValue());
+	});
+:};
+
+instructions ::= instructions:list instruction:a {:RESULT=list;  RESULT.add((Expression) a); :}
+	| instruction:a {:RESULT = new ArrayList<Expression>(); RESULT.add((Expression) a); :}
+;
+
+
+instruction ::=
+	expression:res PUNTOYCOMA {:RESULT =  res;:} 
+	| error PUNTOYCOMA
+;
+ 
+expression ::= expression:left ADD expression:right		{:RESULT = new Expression(left, right, new String("+"));:}
+	|expression:left MINUS expression:right		{:RESULT = new Expression(left, right, new String("-"));:}
+	|expression:left TIMES expression:right		{:RESULT = new Expression(left, right, new String("*"));:}
+	|expression:left DIV expression:right		{:RESULT = new Expression(left, right, new String("/"));:}
+	|NUMBER:num									{:RESULT = new Expression(new Double(num));:}
+	|DECIMAL:num								{:RESULT = new Expression(new Double(num));:}
+;  
+
