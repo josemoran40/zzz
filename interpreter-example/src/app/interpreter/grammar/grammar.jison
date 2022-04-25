@@ -5,6 +5,11 @@
     const {Declaracion} = require('../Instruccion/Declaracion')
     const {Print} = require('../Instruccion/Print')
     const {Acceso} = require('../Expresion/Acceso')
+    const {Statement} = require('../Instruccion/Statement')
+    const {If} = require('../Instruccion/If')
+    const {While} = require('../Instruccion/While')
+    const {Funcion} = require('../Instruccion/Funcion')
+    const {LlamadaFuncion} = require('../Instruccion/LlamadaFuncion')
 %}
 
 %lex
@@ -22,6 +27,10 @@
 "true"                  return 'TRUE';
 "false"                 return 'FALSE';
 "print"                 return 'PRINT';
+"function"              return 'FUNCTION'
+
+"if"                    return 'IF';
+"while"                 return 'WHILE';
 
 //'dijofdjf'+${}'
 [0-9]+("."[0-9]+)?\b  	return 'ENTERO';
@@ -30,6 +39,10 @@
 
 "("                     return 'PAR_ABRE';
 ")"                     return 'PAR_CIERRA';
+
+"{"                     return 'LLAVE_ABRE';
+"}"                     return 'LLAVE_CIERRA';
+
 
 //logicos
 "=="                    return 'D_IGUAL';
@@ -87,6 +100,10 @@ instrucciones
 inicio
     :declaracion
     |print
+    |if
+    |while
+    |function
+    |llamadaFuncion
 ;
 
 declaracion
@@ -100,12 +117,55 @@ print
     {$$ = new Print($3,@1.first_line, @1.first_column)}    
 ;
 
+if 
+    :IF PAR_ABRE expresion PAR_CIERRA statement elsE {$$ = new If($3, $5, $6, @1.first_line, @1.first_column)}
+;
+
+elsE
+    :ELSE statement {$$ = $2}
+    |ELSE if {$$ = $2}
+    | {$$ = null}
+;
+
+while
+    : WHILE PAR_ABRE expresion PAR_CIERRA statement
+    { $$ = new While($3, $5,  @1.first_line, @1.first_column)}
+;
+
+statement
+    : LLAVE_ABRE instrucciones LLAVE_CIERRA { $$ = new Statement($2, @1.first_line, @1.first_column)}
+    | LLAVE_ABRE LLAVE_CIERRA {$$ = new Statement([], @1.first_line, @1.first_column)}
+;
+
+
 ListaExpr
     :ListaExpr COMA expresion
      {$1.push($3); $$=$1;}
     |expresion
     {$$=[$1]}
 ;
+
+function
+    :FUNCTION IDENTIFICADOR PAR_ABRE PAR_CIERRA statement
+        {$$ = new Funcion($2, $5, [],  @1.first_line, @1.first_column)}
+    |FUNCTION IDENTIFICADOR PAR_ABRE parametros PAR_CIERRA statement
+        {$$ = new Funcion($2, $6, $4,  @1.first_line, @1.first_column)}
+;
+
+parametros
+    : parametros COMA IDENTIFICADOR
+        {$1.push($3); $$ = $1;}
+    |IDENTIFICADOR
+        {$$ = [$1]}
+;
+
+llamadaFuncion
+    : IDENTIFICADOR PAR_ABRE PAR_CIERRA PUNTO_Y_COMA
+    { $$ = new LlamadaFuncion($1, [],  @1.first_line, @1.first_column)}
+    | IDENTIFICADOR PAR_ABRE ListaExpr PAR_CIERRA PUNTO_Y_COMA
+    { $$ = new LlamadaFuncion($1, $3,  @1.first_line, @1.first_column)}
+;
+
 //EXPRESION
 
 expresion

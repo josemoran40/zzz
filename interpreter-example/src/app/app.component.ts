@@ -1,12 +1,14 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import parser from './interpreter/grammar/grammar.js';
-import { Expresion } from './interpreter/Expresion/Expresion.js';
+
 
 import * as ace from 'ace-builds'; // ace module ..
 import 'ace-builds/src-noconflict/ext-beautify';
 import 'ace-builds/src-noconflict/mode-typescript'
-import 'ace-builds/src-noconflict/theme-tomorrow_night_eighties';import { Ambito } from './interpreter/Extra/Ambito.js';
-;
+import 'ace-builds/src-noconflict/theme-tomorrow_night_eighties'; import { Ambito } from './interpreter/Extra/Ambito.js';
+import { Funcion } from './interpreter/Instruccion/Funcion.js';
+import { LlamadaFuncion } from './interpreter/Instruccion/LlamadaFuncion.js';
+import { Instruccion } from './interpreter/Instruccion/Instruccion.js';
 const THEME = 'ace/theme/tomorrow_night_eighties';
 const LANG = 'ace/mode/typescript';
 
@@ -48,10 +50,22 @@ export class AppComponent implements OnInit {
     console.log(ast)
     try {
       const ambito = new Ambito(null)
-      for(const inst of ast){
-        inst.execute(ambito);
+      for (const instr of ast) {
+        try {
+          if (instr.paramsIDs){
+            instr.execute(ambito);
+          }            
+        } catch (error) {
+          console.log(error)
+        }
       }
-      
+      console.log(ambito)
+      for (const inst of ast) {
+        if (!(inst instanceof Funcion)) {
+          inst.execute(ambito);
+        }
+      }
+
     } catch (error) {
       console.log(error)
     }
